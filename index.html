@@ -494,7 +494,7 @@
     </div>
 
     <script>
-        const STOP_WORDS = new Set([
+        let STOP_WORDS = new Set([
             "about", "after", "also", "been", "being", "both", "does", "done", "each", "from",
             "full", "have", "just", "like", "made", "more", "most", "much", "must", "near",
             "need", "next", "often", "only", "other", "over", "part", "same", "some", "such",
@@ -663,7 +663,22 @@
             event.target.value = '';
         }
 
-        autoLoadTodayRounds();
+        function loadExcludedWords() {
+            return fetch('excluded-words.json').then(function(resp) {
+                if (!resp.ok) return;
+                return resp.json();
+            }).then(function(words) {
+                if (words && Array.isArray(words)) {
+                    for (const w of words) {
+                        STOP_WORDS.add(w.toLowerCase());
+                    }
+                }
+            }).catch(function() {});
+        }
+
+        loadExcludedWords().then(function() {
+            autoLoadTodayRounds();
+        });
 
         function loadRound() {
             const roundData = GAME_ROUNDS[currentRoundIndex];

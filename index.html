@@ -604,7 +604,29 @@
         }
 
         function autoLoadTodayRounds() {
+            const params = new URLSearchParams(window.location.search);
+            const dateParam = params.get('date');
             const d = new Date();
+            if (dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam)) {
+                const reqYear = parseInt(dateParam.slice(0,4), 10);
+                const reqMonth = parseInt(dateParam.slice(5,7), 10) - 1;
+                const reqDay = parseInt(dateParam.slice(8,10), 10);
+                const reqDate = new Date(reqYear, reqMonth, reqDay);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                if (reqDate > today) {
+                    document.getElementById('messageDisplay').textContent = 'Future dates are not available. Loading today\'s words.';
+                    document.getElementById('messageDisplay').className = 'message warning';
+                    setTimeout(function() {
+                        document.getElementById('messageDisplay').textContent = '';
+                        document.getElementById('messageDisplay').className = 'message';
+                    }, 3000);
+                } else {
+                    d.setFullYear(reqYear);
+                    d.setMonth(reqMonth);
+                    d.setDate(reqDay);
+                }
+            }
             const y = d.getFullYear();
             const m = String(d.getMonth() + 1).padStart(2, '0');
             const day = String(d.getDate()).padStart(2, '0');
@@ -616,8 +638,8 @@
                     return resp.json();
                 })
                 .then(function(data) {
-                    if (loadRoundsFromData(data, 'Words from ' + filename)) {
-                        document.getElementById('messageDisplay').textContent = 'Loaded word set for today!';
+                    if (loadRoundsFromData(data)) {
+                        document.getElementById('messageDisplay').textContent = 'Loaded words for ' + y + '-' + m + '-' + day;
                         document.getElementById('messageDisplay').className = 'message correct';
                         setTimeout(function() {
                             document.getElementById('messageDisplay').textContent = '';
@@ -896,8 +918,18 @@
 
         function shareScore() {
             const d = new Date();
+            const params = new URLSearchParams(window.location.search);
+            const dateParam = params.get('date');
+            if (dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam)) {
+                d.setFullYear(parseInt(dateParam.slice(0,4), 10));
+                d.setMonth(parseInt(dateParam.slice(5,7), 10) - 1);
+                d.setDate(parseInt(dateParam.slice(8,10), 10));
+            }
             const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
             const dateStr = d.getDate() + " " + months[d.getMonth()] + " " + d.getFullYear();
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
             let totalPossible = 0;
             for (let i = 0; i < roundScores.length; i++) {
                 totalPossible += roundScores[i].possible;
@@ -914,7 +946,7 @@
                 }
                 lines += r.clue + " " + stars + " " + r.score + "/" + r.possible + "\n";
             }
-            lines += "\nPlay at: " + window.location.href;
+            lines += "\nPlay at: " + window.location.origin + window.location.pathname + "?date=" + y + "-" + m + "-" + day;
 
             navigator.clipboard.writeText(lines).then(function() {
                 const btn = document.getElementById('shareBtn');

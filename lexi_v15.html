@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lexi - The Word Definition Game</title>
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Alex+Brush&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            --container-bg: rgba(255,255,255,0.05);
+            --container-border: rgba(255,255,255,0.1);
+            --container-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            --surface: rgba(255,255,255,0.06);
+            --surface-hover: rgba(255,255,255,0.15);
+            --surface-border: rgba(255,255,255,0.08);
+            --surface-border-strong: rgba(255,255,255,0.12);
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent: #00d4aa;
+            --accent-light: #5eead4;
+            --accent-shadow: rgba(0,212,170,0.3);
+            --input-bg: #1e293b;
+            --input-border: rgba(255,255,255,0.12);
+            --hint-bg: rgba(245,158,11,0.08);
+            --hint-border: rgba(245,158,11,0.25);
+            --hint-text: #fbbf24;
+            --incorrect-bg: rgba(239,68,68,0.08);
+            --incorrect-border: rgba(239,68,68,0.3);
+            --incorrect-text: #fca5a5;
+            --answers-bg: rgba(0,212,170,0.08);
+            --answers-border: rgba(0,212,170,0.25);
+            --answers-text: #5eead4;
+            --definition-bg: rgba(255,255,255,0.04);
+            --definition-border: rgba(255,255,255,0.08);
+            --definition-text: #cbd5e1;
+            --btn-text: #0f172a;
+            --btn-disabled-bg: rgba(255,255,255,0.08);
+            --btn-disabled-text: #64748b;
+            --focus-ring: rgba(0,212,170,0.2);
+            --correct: #00d4aa;
+            --incorrect: #ef4444;
+            --warning: #f59e0b;
+        }
+
+        [data-theme="light"] {
+            --bg-gradient: linear-gradient(135deg, #e2e8f0 0%, #f1f5f9 100%);
+            --container-bg: #ffffff;
+            --container-border: #e2e8f0;
+            --container-shadow: 0 4px 20px rgba(0,0,0,0.06);
+            --surface: #f1f5f9;
+            --surface-hover: #e2e8f0;
+            --surface-border: #e2e8f0;
+            --surface-border-strong: #cbd5e1;
+            --text-primary: #1e293b;
+            --text-secondary: #475569;
+            --text-muted: #94a3b8;
+            --accent: #0d9488;
+            --accent-light: #14b8a6;
+            --accent-shadow: rgba(13,148,136,0.25);
+            --input-bg: #ffffff;
+            --input-border: #cbd5e1;
+            --hint-bg: #fffbeb;
+            --hint-border: #fde68a;
+            --hint-text: #b45309;
+            --incorrect-bg: #fef2f2;
+            --incorrect-border: #fecaca;
+            --incorrect-text: #b91c1c;
+            --answers-bg: #f0fdfa;
+            --answers-border: #99f6e4;
+            --answers-text: #0f766e;
+            --definition-bg: #f8fafc;
+            --definition-border: #e2e8f0;
+            --definition-text: #475569;
+            --btn-text: #ffffff;
+            --btn-disabled-bg: #e2e8f0;
+            --btn-disabled-text: #94a3b8;
+            --focus-ring: rgba(13,148,136,0.2);
+            --correct: #0d9488;
+            --incorrect: #dc2626;
+            --warning: #d97706;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg-gradient);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+            transition: background 0.3s;
+        }
+        .game-container {
+            background: var(--container-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 20px;
+            border-radius: 16px;
+            border: 1px solid var(--container-border);
+            box-shadow: var(--container-shadow);
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+            position: relative;
+            transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;
+        }
+        h1 {
+            font-family: 'Great Vibes', 'Alex Brush', 'Edwardian Script ITC', cursive;
+            color: var(--accent);
+            font-size: 120px;
+            font-weight: 700;
+            margin-bottom: 0px;
+            margin-top: 0px;
+            letter-spacing: 1px;
+            text-shadow: 0 0 25px var(--accent-shadow);
+        }
+        .theme-toggle {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: var(--surface);
+            border: 1px solid var(--surface-border);
+            border-radius: 30px;
+            padding: 8px 18px;
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+            user-select: none;
+        }
+        .theme-toggle:hover {
+            background: var(--surface-hover);
+        }
+        [data-theme="light"] .theme-toggle {
+            background: #1e293b;
+            border-color: #1e293b;
+            color: #fbbf24;
+        }
+        [data-theme="light"] .theme-toggle:hover {
+            background: #334155;
+            border-color: #334155;
+        }
+        .round-indicator {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-primary);
+            background: var(--surface);
+            border: 1px solid var(--surface-border-strong);
+            padding: 6px 18px;
+            border-radius: 20px;
+            display: inline-block;
+            margin-bottom: 18px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+        .clue-box {
+            background: var(--surface);
+            border: 1px solid var(--container-border);
+            padding: 18px;
+            border-radius: 10px;
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 15px 0;
+            letter-spacing: 1px;
+            text-transform: capitalize;
+        }
+        p.detailed-instructions {
+            color: var(--text-secondary);
+            font-size: 14px;
+            line-height: 1.6;
+            margin: 10px 0 20px 0;
+            padding: 0 10px;
+        }
+        p.detailed-instructions a {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 600;
+        }
+        p.detailed-instructions a:hover {
+            text-decoration: underline;
+            color: var(--accent-light);
+        }
+        .score-banner {
+            display: flex;
+            justify-content: space-between;
+            background: var(--surface);
+            border: 1px solid var(--surface-border);
+            padding: 12px 18px;
+            border-radius: 10px;
+            margin-bottom: 18px;
+            font-weight: 600;
+            font-size: 14px;
+            align-items: center;
+            color: var(--text-primary);
+            transition: background 0.3s, border-color 0.3s;
+        }
+        .score-tracker-item {
+            display: flex;
+            align-items: center;
+        }
+        .info-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: 8px;
+            cursor: help;
+            font-size: 11px;
+            font-weight: 700;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            color: var(--accent);
+            border: 1.5px solid var(--accent);
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            user-select: none;
+            opacity: 0.6;
+            transition: opacity 0.2s, background 0.2s, color 0.2s;
+            flex-shrink: 0;
+        }
+        .info-icon:hover {
+            opacity: 1;
+            background: var(--accent);
+            color: var(--btn-text);
+        }
+        button .info-icon {
+            border: none;
+            opacity: 0.8;
+            color: inherit;
+            width: 18px;
+            height: 18px;
+            font-size: 10px;
+            margin-left: 4px;
+            background: rgba(0,0,0,0.15);
+        }
+        button .info-icon:hover {
+            opacity: 1;
+            background: rgba(0,0,0,0.25);
+            color: inherit;
+        }
+        .input-wrapper {
+            position: relative;
+            width: 85%;
+            margin: 0 auto 15px auto;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 14px 50px 14px 16px;
+            font-size: 15px;
+            background: var(--input-bg);
+            color: var(--text-primary);
+            border: 2px solid var(--input-border);
+            border-radius: 10px;
+            outline: none;
+            text-align: center;
+            box-sizing: border-box;
+            accent-color: var(--accent);
+            transition: border-color 0.25s, box-shadow 0.25s, background 0.3s, color 0.3s;
+        }
+        input[type="text"]:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--focus-ring);
+        }
+        .char-counter {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 13px;
+            color: var(--text-secondary);
+            font-weight: 700;
+            background: var(--surface);
+            padding: 2px 8px;
+            border-radius: 6px;
+            pointer-events: none;
+        }
+        .btn-container {
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+        .hint-btn-wrapper {
+            display: flex;
+            align-items: center;
+        }
+        button {
+            padding: 12px 25px;
+            font-size: 15px;
+            font-weight: 700;
+            background-color: var(--accent);
+            color: var(--btn-text);
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s;
+        }
+        button:hover {
+            background-color: var(--accent-light);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px var(--accent-shadow);
+        }
+        button:disabled {
+            background-color: var(--btn-disabled-bg) !important;
+            color: var(--btn-disabled-text) !important;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+        #hintBtn {
+            background-color: var(--warning);
+            color: var(--btn-text);
+        }
+        #hintBtn:hover {
+            background-color: var(--hint-text);
+            box-shadow: 0 4px 16px rgba(245,158,11,0.3);
+        }
+        #nextBtn {
+            background-color: var(--accent);
+            display: none;
+        }
+        #nextBtn:hover {
+            background-color: var(--accent-light);
+        }
+        .message {
+            margin-top: 15px;
+            font-size: 18px;
+            font-weight: 700;
+            min-height: 24px;
+            color: var(--text-primary);
+        }
+        .attempts {
+            margin-top: 4px;
+            margin-bottom: 16px;
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .hint-box {
+            background: var(--hint-bg);
+            border: 1px solid var(--hint-border);
+            padding: 16px;
+            border-radius: 10px;
+            text-align: center;
+            margin-top: 15px;
+            display: none;
+            color: var(--hint-text);
+            font-size: 15px;
+            font-weight: 500;
+            transition: background 0.3s, border-color 0.3s, color 0.3s;
+        }
+        .hint-list-item {
+            margin: 8px 0;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 20px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            color: var(--hint-text);
+            transition: color 0.3s ease;
+        }
+        .incorrect-list, .answers-list, .definition-box {
+            margin-top: 15px;
+            padding: 14px;
+            border-radius: 10px;
+            text-align: left;
+            box-sizing: border-box;
+        }
+        .incorrect-list {
+            background: var(--incorrect-bg);
+            border: 1px dashed var(--incorrect-border);
+            display: none;
+        }
+        .incorrect-list h4 {
+            margin: 0 0 5px 0;
+            color: var(--incorrect-text);
+            font-size: 14px;
+            font-weight: 700;
+        }
+        .incorrect-list ul {
+            margin: 0;
+            padding-left: 20px;
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+        .answers-list {
+            background: var(--answers-bg);
+            border: 1px solid var(--answers-border);
+            display: none;
+        }
+        .answers-list h4 {
+            margin: 0 0 5px 0;
+            color: var(--answers-text);
+            font-size: 14px;
+            font-weight: 700;
+        }
+        .answers-list p {
+            margin: 0;
+            color: var(--text-primary);
+            font-size: 14px;
+            font-weight: 600;
+            line-height: 1.5;
+        }
+        .definition-box {
+            background: var(--definition-bg);
+            border: 1px solid var(--definition-border);
+            display: none;
+        }
+        .definition-box h4 {
+            margin: 0 0 5px 0;
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 700;
+        }
+        .definition-box p {
+            margin: 0;
+            color: var(--definition-text);
+            font-size: 14px;
+            font-style: italic;
+            line-height: 1.5;
+        }
+        .correct { color: var(--correct); }
+        .incorrect { color: var(--incorrect); }
+        .warning { color: var(--warning); }
+        
+        .guessed-word-highlight {
+            color: var(--accent);
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle light/dark mode">☀️</button>
+        <h1>Lexi</h1>
+        <div class="round-indicator" id="roundIndicator">Round 1 of 5</div>
+        
+        <div class="score-banner">
+            <div class="score-tracker-item">
+                <span id="roundScoreTracker">Round Max Score: --</span>
+                <span class="info-icon" title="Max Score: (5 / attempt number) x longest answer word length. Guessing a longer word on your first attempt earns maximum points!">i</span>
+            </div>
+            <span id="totalScoreTracker">Total Score: 0</span>
+        </div>
+        
+        <p class="detailed-instructions">
+            Analyze the definition below and guess an acceptable word that is contained within it. The targeted answer must be <strong>5 letters or more</strong>. Spaces and numbers are strictly prohibited. All definition records are sourced directly from <a href="https://www.merriam-webster.com" target="_blank">merriam-webster.com</a>.
+        </p>
+
+        <input type="file" id="fileInput" accept=".json" onchange="handleFileUpload(event)" style="display:none">
+
+        <div class="clue-box" id="clueDisplay">...</div>
+        
+        <div class="input-wrapper">
+            <!-- Modified: Added onkeydown listener to track the Enter key press -->
+            <input type="text" id="guessInput" placeholder="Type a 5+ letter definition word..." autocomplete="off" oninput="updateCharCounter()" onkeydown="handleKeyDown(event)">
+            <span id="charCounter" class="char-counter">0</span>
+        </div>
+        
+        <div id="attemptsDisplay" class="attempts">Attempts remaining: 5</div>
+
+        <div class="btn-container">
+            <div id="hintBtnWrapper" class="hint-btn-wrapper">
+                <button id="hintBtn" onclick="getHint()">Hint <span class="info-icon" title="Shows 3 hidden answer words with length hints. Using a hint triggers a 50% score penalty for the current round.">i</span></button>
+            </div>
+            <button id="submitBtn" onclick="checkGuess()">Submit Guess</button>
+            <button id="nextBtn" onclick="nextRound()">Next Round →</button>
+        </div>
+
+        <div id="hintContainer" class="hint-box"></div>
+
+        <div id="messageDisplay" class="message"></div>
+        
+        <div id="definitionContainer" class="definition-box">
+            <h4>Full Definition:</h4>
+            <p id="fullDefinitionDisplay"></p>
+        </div>
+
+        <div id="answersContainer" class="answers-list">
+            <h4>Acceptable Answers Were:</h4>
+            <p id="acceptableAnswersDisplay"></p>
+        </div>
+
+        <div id="incorrectContainer" class="incorrect-list">
+            <h4>Incorrect Guesses this Round:</h4>
+            <ul id="incorrectGuessesList"></ul>
+        </div>
+    </div>
+
+    <script>
+        const STOP_WORDS = new Set([
+            "about", "after", "also", "been", "being", "both", "does", "done", "each", "from",
+            "full", "have", "just", "like", "made", "more", "most", "much", "must", "near",
+            "need", "next", "often", "only", "other", "over", "part", "same", "some", "such",
+            "that", "them", "then", "they", "this", "thus", "used", "very", "were", "what",
+            "when", "which", "while", "will", "with", "within", "without", "would", "into",
+            "their", "there", "these", "those", "after", "before", "between", "through"
+        ]);
+
+        function extractAnswers(definition) {
+            const words = definition.toLowerCase().split(/[^a-z]+/);
+            const seen = new Set();
+            const result = [];
+            for (const w of words) {
+                if (w.length >= 5 && !STOP_WORDS.has(w) && !seen.has(w)) {
+                    seen.add(w);
+                    result.push(w);
+                }
+            }
+            return result;
+        }
+
+        const DEFAULT_ROUNDS = [
+            {
+                clue: "Zeitgeist",
+                fullDefinition: "the general intellectual, moral, and cultural climate of an era",
+                acceptableAnswers: ["general", "intellectual", "moral", "cultural", "climate"]
+            },
+            {
+                clue: "Umami",
+                fullDefinition: "refers to the taste sensation that is produced by several amino acids and nucleotides and that has a rich or meaty flavor characteristic of cheese, cooked meat, mushrooms, soy, and ripe tomatoes.",
+                acceptableAnswers: ["refers", "taste", "sensation", "produced", "several", "amino", "acids", "nucleotides", "meaty", "flavor", "characteristic", "cheese", "cooked", "mushrooms", "tomatoes"]
+            },
+            {
+                clue: "Gainsay",
+                fullDefinition: "to deny, dispute, or contradict a statement; to speak against or oppose someone.",
+                acceptableAnswers: ["dispute", "contradict", "statement", "speak", "against", "oppose", "someone"]
+            },
+            {
+                clue: "Symbiosis",
+                fullDefinition: "is a formal word that refers to a relationship between two people or groups that work with and depend on each other. In biology, it refers to the relationship between two different kinds of living things that live together and depend on each other.",
+                acceptableAnswers: ["formal", "refers", "relationship", "between", "people", "groups", "depend", "other", "biology", "different", "kinds", "living", "things", "together"]
+            },
+            {
+                clue: "Pantheon",
+                fullDefinition: "usually refers to a group of famous or notable people or things. It also refers to the officially recognized gods of a particular people, as well as to the Roman Pantheon, the domed temple begun in 27 B.C. and rebuilt circa 118-128 A.D.",
+                acceptableAnswers: ["usually", "refers", "group", "famous", "notable", "people", "things", "officially", "recognized", "particular", "roman", "domed", "temple", "begun", "rebuilt", "circa"]
+            }
+        ];
+
+        let GAME_ROUNDS = [];
+        let currentRoundIndex = 0;
+        let totalScore = 0;
+
+        let attemptsLeft = 5;
+        let guessNumber = 1;
+        let incorrectGuesses = [];
+        let topPossibleRoundScore = 0;
+        let hintUsedThisRound = false;
+        let activeHintObjects = [];
+
+        function toggleTheme() {
+            const html = document.documentElement;
+            const isLight = html.getAttribute('data-theme') === 'light';
+            html.setAttribute('data-theme', isLight ? '' : 'light');
+            localStorage.setItem('lexi-theme', isLight ? 'dark' : 'light');
+            document.getElementById('themeToggle').textContent = isLight ? '☀️' : '🌙';
+        }
+
+        (function initTheme() {
+            const saved = localStorage.getItem('lexi-theme');
+            if (saved === 'light') {
+                document.documentElement.setAttribute('data-theme', 'light');
+                document.getElementById('themeToggle').textContent = '🌙';
+            }
+        })();
+
+        function loadRoundsFromData(data) {
+            if (!data.rounds || !Array.isArray(data.rounds) || data.rounds.length === 0) {
+                document.getElementById('messageDisplay').textContent = 'Invalid file: no rounds found.';
+                document.getElementById('messageDisplay').className = 'message warning';
+                return false;
+            }
+            const rounds = [];
+            for (const r of data.rounds) {
+                if (!r.clue || !r.fullDefinition) {
+                    document.getElementById('messageDisplay').textContent = 'Invalid round: missing clue or fullDefinition.';
+                    document.getElementById('messageDisplay').className = 'message warning';
+                    return false;
+                }
+                const answers = r.acceptableAnswers || extractAnswers(r.fullDefinition);
+                if (answers.length === 0) continue;
+                rounds.push({ clue: r.clue, fullDefinition: r.fullDefinition, acceptableAnswers: answers });
+            }
+            if (rounds.length === 0) {
+                document.getElementById('messageDisplay').textContent = 'No usable rounds found in file.';
+                document.getElementById('messageDisplay').className = 'message warning';
+                return false;
+            }
+            GAME_ROUNDS = rounds;
+            currentRoundIndex = 0;
+            totalScore = 0;
+            document.getElementById('totalScoreTracker').textContent = "Total Score: 0";
+            loadRound();
+            return true;
+        }
+
+        function autoLoadTodayRounds() {
+            const d = new Date();
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            const filename = 'words-' + y + '-' + m + '-' + day + '.json';
+
+            fetch(filename)
+                .then(function(resp) {
+                    if (!resp.ok) throw new Error('not found');
+                    return resp.json();
+                })
+                .then(function(data) {
+                    if (loadRoundsFromData(data, 'Words from ' + filename)) {
+                        document.getElementById('messageDisplay').textContent = 'Loaded word set for today!';
+                        document.getElementById('messageDisplay').className = 'message correct';
+                        setTimeout(function() {
+                            document.getElementById('messageDisplay').textContent = '';
+                            document.getElementById('messageDisplay').className = 'message';
+                        }, 2000);
+                    }
+                })
+                .catch(function() {
+                    GAME_ROUNDS = DEFAULT_ROUNDS.slice();
+                    currentRoundIndex = 0;
+                    totalScore = 0;
+                    document.getElementById('totalScoreTracker').textContent = "Total Score: 0";
+                    loadRound();
+                });
+        }
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    const match = file.name.match(/words-(\d{4}-\d{2}-\d{2})\.json/);
+                    const label = match ? 'Words from ' + match[0] : file.name;
+                    loadRoundsFromData(data, label);
+                } catch (err) {
+                    document.getElementById('messageDisplay').textContent = 'Failed to parse JSON: ' + err.message;
+                    document.getElementById('messageDisplay').className = 'message warning';
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+
+        autoLoadTodayRounds();
+
+        function loadRound() {
+            const roundData = GAME_ROUNDS[currentRoundIndex];
+            const total = GAME_ROUNDS.length;
+
+            document.getElementById('roundIndicator').textContent = "Round " + (currentRoundIndex + 1) + " of " + total;
+            document.getElementById('clueDisplay').textContent = roundData.clue;
+            document.getElementById('guessInput').value = "";
+            document.getElementById('guessInput').disabled = false;
+            document.getElementById('charCounter').textContent = "0";
+
+            document.getElementById('hintBtnWrapper').style.display = "flex";
+            document.getElementById('hintBtn').disabled = false;
+            document.getElementById('submitBtn').style.display = "inline-block";
+            document.getElementById('submitBtn').disabled = false;
+            document.getElementById('nextBtn').style.display = "none";
+
+            document.getElementById('messageDisplay').textContent = "";
+            document.getElementById('messageDisplay').className = "message";
+            document.getElementById('attemptsDisplay').textContent = "Attempts remaining: 5";
+
+            document.getElementById('hintContainer').style.display = "none";
+            document.getElementById('hintContainer').innerHTML = "";
+            document.getElementById('definitionContainer').style.display = "none";
+            document.getElementById('answersContainer').style.display = "none";
+            document.getElementById('incorrectContainer').style.display = "none";
+
+            attemptsLeft = 5;
+            guessNumber = 1;
+            incorrectGuesses = [];
+            hintUsedThisRound = false;
+            activeHintObjects = [];
+
+            let longestWordLength = 0;
+            for (let i = 0; i < roundData.acceptableAnswers.length; i++) {
+                if (roundData.acceptableAnswers[i].length > longestWordLength) {
+                    longestWordLength = roundData.acceptableAnswers[i].length;
+                }
+            }
+            topPossibleRoundScore = Math.round((5 / 1) * longestWordLength);
+
+            document.getElementById('roundScoreTracker').textContent = "Round Max Score: " + topPossibleRoundScore;
+            document.getElementById('totalScoreTracker').textContent = "Total Score: " + totalScore;
+        }
+
+        function updateCharCounter() {
+            const inputElement = document.getElementById('guessInput');
+            inputElement.value = inputElement.value.replace(/[^a-zA-Z]/g, '');
+            document.getElementById('charCounter').textContent = inputElement.value.length;
+        }
+
+        function handleKeyDown(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                const submitBtn = document.getElementById('submitBtn');
+                if (submitBtn && submitBtn.style.display !== "none" && !submitBtn.disabled) {
+                    checkGuess();
+                }
+            }
+        }
+
+        function getHint() {
+            hintUsedThisRound = true;
+            const roundData = GAME_ROUNDS[currentRoundIndex];
+            const answers = roundData.acceptableAnswers;
+
+            const sorted = [...answers].sort((a, b) => a.length - b.length);
+            const longest = sorted[sorted.length - 1];
+
+            let smallestCandidates = sorted.slice(0, 3).filter(w => w !== longest);
+            if (smallestCandidates.length === 0) {
+                smallestCandidates = sorted.filter(w => w !== longest);
+            }
+            const smallest = smallestCandidates[Math.floor(Math.random() * smallestCandidates.length)];
+
+            let inBetweenCandidates = sorted.slice(3, sorted.length - 1);
+            inBetweenCandidates = inBetweenCandidates.filter(w => w !== longest && w !== smallest);
+            if (inBetweenCandidates.length === 0) {
+                inBetweenCandidates = sorted.filter(w => w !== longest && w !== smallest);
+            }
+            const inBetween = inBetweenCandidates[Math.floor(Math.random() * inBetweenCandidates.length)];
+
+            let selectedWords = [longest, smallest, inBetween];
+            selectedWords.sort(() => Math.random() - 0.5);
+
+            activeHintObjects = selectedWords.map(function(word, index) {
+                let initialLetter = word.charAt(0);
+                let dashes = "-".repeat(word.length - 1);
+                const sizeSuffix = " (" + word.length + ")";
+                return {
+                    fullWord: word,
+                    obscuredString: initialLetter + dashes + sizeSuffix,
+                    revealedString: word + sizeSuffix,
+                    elementId: "lexi-hint-item-" + index
+                };
+            });
+
+            const hintBox = document.getElementById('hintContainer');
+            let hintHTML = "💡 <strong>Hint (50% Penalty Active):</strong><br>";
+            activeHintObjects.forEach(function(hintObj) {
+                hintHTML += "<div class='hint-list-item' id='" + hintObj.elementId + "'>" + hintObj.obscuredString + "</div>";
+            });
+            hintBox.innerHTML = hintHTML;
+            hintBox.style.display = "block";
+            document.getElementById('hintBtn').disabled = true;
+        }
+
+        function checkGuess() {
+            const inputElement = document.getElementById('guessInput');
+            const messageElement = document.getElementById('messageDisplay');
+            const attemptsElement = document.getElementById('attemptsDisplay');
+            const incorrectContainer = document.getElementById('incorrectContainer');
+            const incorrectGuessesList = document.getElementById('incorrectGuessesList');
+
+            const roundData = GAME_ROUNDS[currentRoundIndex];
+            const userGuess = inputElement.value.toLowerCase().trim();
+
+            if (userGuess === '') {
+                messageElement.textContent = 'Please enter a guess!';
+                messageElement.className = 'message warning';
+                return;
+            }
+
+            if (userGuess.length < 5) {
+                messageElement.textContent = '\u26a0\ufe0f Words must be 5 letters or longer!';
+                messageElement.className = 'message warning';
+                return;
+            }
+
+            if (incorrectGuesses.includes(userGuess)) {
+                messageElement.textContent = '\u26a0\ufe0f You already tried that word and got it wrong!';
+                messageElement.className = 'message warning';
+                return;
+            }
+
+            if (roundData.acceptableAnswers.includes(userGuess)) {
+                const wordLength = userGuess.length;
+                let finalRoundScore = Math.round((5 / guessNumber) * wordLength);
+
+                let penaltyText = "";
+                if (hintUsedThisRound) {
+                    finalRoundScore = Math.round(finalRoundScore / 2);
+                    penaltyText = " (Hint Used: 50% Penalty Applied)";
+                    activeHintObjects.forEach(function(hintObj) {
+                        if (hintObj.fullWord === userGuess) {
+                            const targetElement = document.getElementById(hintObj.elementId);
+                            if (targetElement) {
+                                targetElement.textContent = hintObj.revealedString;
+                                targetElement.style.color = "#28a745";
+                            }
+                        }
+                    });
+                }
+
+                totalScore += finalRoundScore;
+                document.getElementById('totalScoreTracker').textContent = "Total Score: " + totalScore;
+
+                messageElement.innerHTML = '🎉 Correct!' + penaltyText + '<br>Round Score: <strong>' + finalRoundScore + '</strong> / ' + topPossibleRoundScore + ' &nbsp;|&nbsp; Word: <span class="guessed-word-highlight">' + userGuess + '</span>';
+                messageElement.className = 'message correct';
+
+                endRoundActions();
+            } else {
+                attemptsLeft--;
+                incorrectGuesses.push(userGuess);
+                incorrectContainer.style.display = 'block';
+
+                incorrectGuessesList.innerHTML = '';
+                incorrectGuesses.forEach(function(guess) {
+                    const li = document.createElement('li');
+                    li.textContent = guess;
+                    incorrectGuessesList.appendChild(li);
+                });
+
+                if (attemptsLeft > 0) {
+                    messageElement.textContent = '\u274c Incorrect! Keep trying.';
+                    messageElement.className = 'message incorrect';
+                    attemptsElement.textContent = "Attempts remaining: " + attemptsLeft;
+                    guessNumber++;
+                } else {
+                    messageElement.innerHTML = '💥 Out of attempts for this round!<br>Top Round Score was: <strong>' + topPossibleRoundScore + '</strong>';
+                    messageElement.className = 'message incorrect';
+                    attemptsElement.textContent = 'Attempts remaining: 0';
+                    endRoundActions();
+                }
+            }
+
+            inputElement.value = "";
+            document.getElementById('charCounter').textContent = "0";
+        }
+
+        function endRoundActions() {
+            document.getElementById('guessInput').disabled = true;
+            document.getElementById('submitBtn').style.display = "none";
+            document.getElementById('hintBtnWrapper').style.display = "none";
+
+            const roundData = GAME_ROUNDS[currentRoundIndex];
+
+            document.getElementById('fullDefinitionDisplay').textContent = roundData.clue + ": " + roundData.fullDefinition;
+            document.getElementById('definitionContainer').style.display = "block";
+
+            document.getElementById('acceptableAnswersDisplay').textContent = roundData.acceptableAnswers.join(", ");
+            document.getElementById('answersContainer').style.display = "block";
+
+            const nextBtn = document.getElementById('nextBtn');
+            if (currentRoundIndex < GAME_ROUNDS.length - 1) {
+                nextBtn.textContent = "Next Round \u2192";
+            } else {
+                nextBtn.textContent = "View Final Results 🏆";
+            }
+            nextBtn.style.display = "inline-block";
+        }
+
+        function nextRound() {
+            if (currentRoundIndex < GAME_ROUNDS.length - 1) {
+                currentRoundIndex++;
+                loadRound();
+            } else {
+                const total = GAME_ROUNDS.length;
+                document.getElementById('roundIndicator').textContent = "Game Completed!";
+                document.getElementById('clueDisplay').textContent = "Final Score: " + totalScore;
+                document.getElementById('guessInput').style.display = "none";
+                document.getElementById('nextBtn').style.display = "none";
+                document.getElementById('attemptsDisplay').style.display = "none";
+                document.getElementById('definitionContainer').style.display = "none";
+                document.getElementById('answersContainer').style.display = "none";
+                document.getElementById('incorrectContainer').style.display = "none";
+                document.getElementById('hintContainer').style.display = "none";
+
+                document.getElementById('messageDisplay').innerHTML = '🏆 Fantastic job! You have completed all ' + total + ' rounds of Lexi.<br>Your final score accumulated is <strong>' + totalScore + '</strong> points.';
+                document.getElementById('messageDisplay').className = 'message correct';
+            }
+        }
+    </script>
+
+</body>
+</html>

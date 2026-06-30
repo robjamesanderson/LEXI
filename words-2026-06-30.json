@@ -1,0 +1,24 @@
+{
+  "rounds": [
+    {
+      "clue": "Bereft",
+      "fullDefinition": "To be bereft is to be deprived or robbed of something, or to lack something that you need, want, or expect."
+    },
+    {
+      "clue": "Serendipity",
+      "fullDefinition": "the ability to find valuable or agreeable things not sought for"
+    },
+    {
+      "clue": "ephemeral",
+      "fullDefinition": "something that lasts for a very short time"
+    },
+    {
+      "clue": "ubiquitous",
+      "fullDefinition": "existing or being everywhere at the same time"
+    },
+    {
+      "clue": "petrichor",
+      "fullDefinition": "a distinctive, earthy, usually pleasant odor that is associated with rainfall especially when following a warm, dry period and that arises from a combination of volatile plant oils and geosmin released from the soil into the air and by ozone carried by downdrafts"
+    }
+  ]
+}

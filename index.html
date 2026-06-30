@@ -547,6 +547,7 @@
         let GAME_ROUNDS = [];
         let currentRoundIndex = 0;
         let totalScore = 0;
+        let roundScores = [];
 
         let attemptsLeft = 5;
         let guessNumber = 1;
@@ -596,6 +597,7 @@
             GAME_ROUNDS = rounds;
             currentRoundIndex = 0;
             totalScore = 0;
+            roundScores = [];
             document.getElementById('totalScoreTracker').textContent = "Total Score: 0";
             loadRound();
             return true;
@@ -627,6 +629,7 @@
                     GAME_ROUNDS = DEFAULT_ROUNDS.slice();
                     currentRoundIndex = 0;
                     totalScore = 0;
+                    roundScores = [];
                     document.getElementById('totalScoreTracker').textContent = "Total Score: 0";
                     loadRound();
                 });
@@ -807,6 +810,7 @@
                 }
 
                 totalScore += finalRoundScore;
+                roundScores.push({ clue: roundData.clue, score: finalRoundScore, possible: topPossibleRoundScore });
                 document.getElementById('totalScoreTracker').textContent = "Total Score: " + totalScore;
 
                 messageElement.innerHTML = '🎉 Correct!' + penaltyText + '<br>Round Score: <strong>' + finalRoundScore + '</strong> / ' + topPossibleRoundScore + ' &nbsp;|&nbsp; Word: <span class="guessed-word-highlight">' + userGuess + '</span>';
@@ -834,6 +838,7 @@
                     messageElement.innerHTML = '💥 Out of attempts for this round!<br>Top Round Score was: <strong>' + topPossibleRoundScore + '</strong>';
                     messageElement.className = 'message incorrect';
                     attemptsElement.textContent = 'Attempts remaining: 0';
+                    roundScores.push({ clue: roundData.clue, score: 0, possible: topPossibleRoundScore });
                     endRoundActions();
                 }
             }
@@ -870,8 +875,12 @@
                 loadRound();
             } else {
                 const total = GAME_ROUNDS.length;
+                let totalPossible = 0;
+                for (let i = 0; i < roundScores.length; i++) {
+                    totalPossible += roundScores[i].possible;
+                }
                 document.getElementById('roundIndicator').textContent = "Game Completed!";
-                document.getElementById('clueDisplay').textContent = "Final Score: " + totalScore;
+                document.getElementById('clueDisplay').textContent = "Final Score: " + totalScore + " / " + totalPossible;
                 document.getElementById('guessInput').style.display = "none";
                 document.getElementById('nextBtn').style.display = "none";
                 document.getElementById('attemptsDisplay').style.display = "none";
@@ -880,9 +889,40 @@
                 document.getElementById('incorrectContainer').style.display = "none";
                 document.getElementById('hintContainer').style.display = "none";
 
-                document.getElementById('messageDisplay').innerHTML = '🏆 Fantastic job! You have completed all ' + total + ' rounds of Lexi.<br>Your final score accumulated is <strong>' + totalScore + '</strong> points.';
+                document.getElementById('messageDisplay').innerHTML = '🏆 Fantastic job! You have completed all ' + total + ' rounds of Lexi.<br>Your final score accumulated is <strong>' + totalScore + '</strong> / <strong>' + totalPossible + '</strong> points.<br><br><button id="shareBtn" onclick="shareScore()" style="padding: 10px 22px; font-size: 14px;">📤 Share Your Score</button>';
                 document.getElementById('messageDisplay').className = 'message correct';
             }
+        }
+
+        function shareScore() {
+            const d = new Date();
+            const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+            const dateStr = d.getDate() + " " + months[d.getMonth()] + " " + d.getFullYear();
+            let totalPossible = 0;
+            for (let i = 0; i < roundScores.length; i++) {
+                totalPossible += roundScores[i].possible;
+            }
+            let lines = "Lexi - " + dateStr + "\n";
+            lines += "My score: " + totalScore + "/" + totalPossible + "\n\n";
+            for (let i = 0; i < roundScores.length; i++) {
+                const r = roundScores[i];
+                const ratio = r.possible > 0 ? r.score / r.possible : 0;
+                let stars = "";
+                const filled = Math.round(ratio * 5);
+                for (let s = 0; s < 5; s++) {
+                    stars += s < filled ? "🟩" : "⬜";
+                }
+                lines += r.clue + " " + stars + " " + r.score + "/" + r.possible + "\n";
+            }
+            lines += "\nPlay at: " + window.location.href;
+
+            navigator.clipboard.writeText(lines).then(function() {
+                const btn = document.getElementById('shareBtn');
+                btn.textContent = "Copied! ✓";
+                setTimeout(function() { btn.textContent = "📤 Share Your Score"; }, 2000);
+            }).catch(function() {
+                alert("Couldn't copy to clipboard. Here's your score:\n\n" + lines);
+            });
         }
     </script>
 

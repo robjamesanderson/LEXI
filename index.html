@@ -503,12 +503,13 @@
             "their", "there", "these", "those", "after", "before", "between", "through"
         ]);
 
-        function extractAnswers(definition) {
+        function extractAnswers(clue, definition) {
             const words = definition.toLowerCase().split(/[^a-z]+/);
+            const clueLower = clue.toLowerCase();
             const seen = new Set();
             const result = [];
             for (const w of words) {
-                if (w.length >= 5 && !STOP_WORDS.has(w) && !seen.has(w)) {
+                if (w.length >= 5 && w !== clueLower && !STOP_WORDS.has(w) && !seen.has(w)) {
                     seen.add(w);
                     result.push(w);
                 }
@@ -585,7 +586,7 @@
                     document.getElementById('messageDisplay').className = 'message warning';
                     return false;
                 }
-                const answers = r.acceptableAnswers || extractAnswers(r.fullDefinition);
+                const answers = r.acceptableAnswers || extractAnswers(r.clue, r.fullDefinition);
                 if (answers.length === 0) continue;
                 rounds.push({ clue: r.clue, fullDefinition: r.fullDefinition, acceptableAnswers: answers });
             }
@@ -664,9 +665,7 @@
             reader.onload = function(e) {
                 try {
                     const data = JSON.parse(e.target.result);
-                    const match = file.name.match(/words-(\d{4}-\d{2}-\d{2})\.json/);
-                    const label = match ? 'Words from ' + match[0] : file.name;
-                    loadRoundsFromData(data, label);
+                    loadRoundsFromData(data);
                 } catch (err) {
                     document.getElementById('messageDisplay').textContent = 'Failed to parse JSON: ' + err.message;
                     document.getElementById('messageDisplay').className = 'message warning';
@@ -784,6 +783,24 @@
             document.getElementById('hintBtn').disabled = true;
         }
 
+        function matchAnswer(guess, answers) {
+            if (answers.includes(guess)) return guess;
+            const plural = guess + 's';
+            if (answers.includes(plural)) return plural;
+            if (guess.endsWith('s') && guess.length > 4) {
+                const singular = guess.slice(0, -1);
+                if (answers.includes(singular)) return singular;
+            }
+            return null;
+        }
+
+        function incorrectIncludes(guess, list) {
+            if (list.includes(guess)) return true;
+            if (list.includes(guess + 's')) return true;
+            if (guess.endsWith('s') && guess.length > 4 && list.includes(guess.slice(0, -1))) return true;
+            return false;
+        }
+
         function checkGuess() {
             const inputElement = document.getElementById('guessInput');
             const messageElement = document.getElementById('messageDisplay');
@@ -806,13 +823,14 @@
                 return;
             }
 
-            if (incorrectGuesses.includes(userGuess)) {
-                messageElement.textContent = '\u26a0\ufe0f You already tried that word and got it wrong!';
+            if (incorrectIncludes(userGuess, incorrectGuesses)) {
+                messageElement.textContent = '\u26a0\ufe0f You already tried that word or a form of it!';
                 messageElement.className = 'message warning';
                 return;
             }
 
-            if (roundData.acceptableAnswers.includes(userGuess)) {
+            const matchedWord = matchAnswer(userGuess, roundData.acceptableAnswers);
+            if (matchedWord) {
                 const wordLength = userGuess.length;
                 let finalRoundScore = Math.round((5 / guessNumber) * wordLength);
 
@@ -821,7 +839,7 @@
                     finalRoundScore = Math.round(finalRoundScore / 2);
                     penaltyText = " (Hint Used: 50% Penalty Applied)";
                     activeHintObjects.forEach(function(hintObj) {
-                        if (hintObj.fullWord === userGuess) {
+                        if (hintObj.fullWord === matchedWord) {
                             const targetElement = document.getElementById(hintObj.elementId);
                             if (targetElement) {
                                 targetElement.textContent = hintObj.revealedString;

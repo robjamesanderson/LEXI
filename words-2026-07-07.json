@@ -1,0 +1,24 @@
+{
+  "rounds": [
+    {
+      "clue": "Gregarious",
+      "fullDefinition": "marked by or indicating a liking for companionship : sociable"
+    },
+    {
+      "clue": "Haughty",
+      "fullDefinition": "blatantly and disdainfully proud : arrogant"
+    },
+    {
+      "clue": "Impetuous",
+      "fullDefinition": "marked by impulsive vehemence or passion"
+    },
+    {
+      "clue": "Judicious",
+      "fullDefinition": "having, exercising, or characterized by sound judgment : discreet"
+    },
+    {
+      "clue": "Lethargic",
+      "fullDefinition": "of, relating to, or characterized by laziness or lack of energy"
+    }
+  ]
+}

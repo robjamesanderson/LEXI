@@ -1,0 +1,24 @@
+{
+  "rounds": [
+    {
+      "clue": "Solitude",
+      "fullDefinition": "the quality or state of being alone or remote from society"
+    },
+    {
+      "clue": "Resilience",
+      "fullDefinition": "the capability of a strained body to recover its size and shape after deformation caused especially by compressive stress"
+    },
+    {
+      "clue": "Mellifluous",
+      "fullDefinition": "having a smooth rich flow or filled with something that sweetens"
+    },
+    {
+      "clue": "Luminous",
+      "fullDefinition": "emitting or reflecting glowing light or shining with unusual splendor"
+    },
+    {
+      "clue": "Ethereal",
+      "fullDefinition": "of or relating to the regions beyond the earth or suggesting the heavens or celestial spheres"
+    }
+  ]
+}

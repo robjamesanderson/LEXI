@@ -555,7 +555,7 @@
         let guessNumber = 1;
         let incorrectGuesses = [];
         let topPossibleRoundScore = 0;
-        let hintUsedThisRound = false;
+        let hintCount = 0;
         let activeHintObjects = [];
 
         function toggleTheme() {
@@ -709,7 +709,7 @@
             attemptsLeft = 5;
             guessNumber = 1;
             incorrectGuesses = [];
-            hintUsedThisRound = false;
+            hintCount = 0;
             activeHintObjects = [];
 
             let longestWordLength = 0;
@@ -741,49 +741,62 @@
         }
 
         function getHint() {
-            hintUsedThisRound = true;
             const roundData = GAME_ROUNDS[currentRoundIndex];
             const answers = roundData.acceptableAnswers;
 
-            const sorted = [...answers].sort((a, b) => a.length - b.length);
-            const longest = sorted[sorted.length - 1];
+            if (hintCount === 0) {
+                const sorted = [...answers].sort((a, b) => a.length - b.length);
+                const longest = sorted[sorted.length - 1];
 
-            let smallestCandidates = sorted.slice(0, 3).filter(w => w !== longest);
-            if (smallestCandidates.length === 0) {
-                smallestCandidates = sorted.filter(w => w !== longest);
+                let smallestCandidates = sorted.slice(0, 3).filter(w => w !== longest);
+                if (smallestCandidates.length === 0) {
+                    smallestCandidates = sorted.filter(w => w !== longest);
+                }
+                const smallest = smallestCandidates[Math.floor(Math.random() * smallestCandidates.length)];
+
+                let inBetweenCandidates = sorted.slice(3, sorted.length - 1);
+                inBetweenCandidates = inBetweenCandidates.filter(w => w !== longest && w !== smallest);
+                if (inBetweenCandidates.length === 0) {
+                    inBetweenCandidates = sorted.filter(w => w !== longest && w !== smallest);
+                }
+                const inBetween = inBetweenCandidates[Math.floor(Math.random() * inBetweenCandidates.length)];
+
+                let selectedWords = [longest, smallest, inBetween];
+                selectedWords.sort(() => Math.random() - 0.5);
+
+                activeHintObjects = selectedWords.map(function(word, index) {
+                    let initialLetter = word.charAt(0);
+                    let dashes = "-".repeat(word.length - 1);
+                    const sizeSuffix = " (" + word.length + ")";
+                    return {
+                        fullWord: word,
+                        displayString: initialLetter + dashes + sizeSuffix,
+                        elementId: "lexi-hint-item-" + index,
+                        revealed: false
+                    };
+                });
             }
-            const smallest = smallestCandidates[Math.floor(Math.random() * smallestCandidates.length)];
 
-            let inBetweenCandidates = sorted.slice(3, sorted.length - 1);
-            inBetweenCandidates = inBetweenCandidates.filter(w => w !== longest && w !== smallest);
-            if (inBetweenCandidates.length === 0) {
-                inBetweenCandidates = sorted.filter(w => w !== longest && w !== smallest);
+            hintCount++;
+            const revealIndex = hintCount - 1;
+            if (activeHintObjects[revealIndex]) {
+                activeHintObjects[revealIndex].revealed = true;
             }
-            const inBetween = inBetweenCandidates[Math.floor(Math.random() * inBetweenCandidates.length)];
-
-            let selectedWords = [longest, smallest, inBetween];
-            selectedWords.sort(() => Math.random() - 0.5);
-
-            activeHintObjects = selectedWords.map(function(word, index) {
-                let initialLetter = word.charAt(0);
-                let dashes = "-".repeat(word.length - 1);
-                const sizeSuffix = " (" + word.length + ")";
-                return {
-                    fullWord: word,
-                    obscuredString: initialLetter + dashes + sizeSuffix,
-                    revealedString: word + sizeSuffix,
-                    elementId: "lexi-hint-item-" + index
-                };
-            });
 
             const hintBox = document.getElementById('hintContainer');
-            let hintHTML = "💡 <strong>Hint (50% Penalty Active):</strong><br>";
+            const penalty = hintCount * 10;
+            let hintHTML = "💡 <strong>Hint (" + penalty + "% Penalty):</strong><br>";
             activeHintObjects.forEach(function(hintObj) {
-                hintHTML += "<div class='hint-list-item' id='" + hintObj.elementId + "'>" + hintObj.obscuredString + "</div>";
+                if (hintObj.revealed) {
+                    hintHTML += "<div class='hint-list-item' id='" + hintObj.elementId + "'>" + hintObj.displayString + "</div>";
+                }
             });
             hintBox.innerHTML = hintHTML;
             hintBox.style.display = "block";
-            document.getElementById('hintBtn').disabled = true;
+
+            if (hintCount >= 3) {
+                document.getElementById('hintBtn').disabled = true;
+            }
         }
 
         function matchAnswer(guess, answers) {
@@ -838,9 +851,10 @@
                 let finalRoundScore = Math.round((5 / guessNumber) * wordLength);
 
                 let penaltyText = "";
-                if (hintUsedThisRound) {
-                    finalRoundScore = Math.round(finalRoundScore / 2);
-                    penaltyText = " (Hint Used: 50% Penalty Applied)";
+                if (hintCount > 0) {
+                    const penaltyPercent = hintCount * 10;
+                    finalRoundScore = Math.round(finalRoundScore * (1 - hintCount * 0.1));
+                    penaltyText = " (Hint Used: " + penaltyPercent + "% Penalty)";
                     activeHintObjects.forEach(function(hintObj) {
                         if (hintObj.fullWord === matchedWord) {
                             const targetElement = document.getElementById(hintObj.elementId);

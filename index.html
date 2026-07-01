@@ -357,7 +357,17 @@
         }
         .hint-list-item {
             margin: 8px 0;
-            font-family: 'Courier New', Courier, monospace;
+            font-family: Consolas, 'Courier New', monospace;
+            font-size: 20px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            color: var(--hint-text);
+            transition: color 0.3s ease;
+        }
+        .hint-word-block {
+            display: block;
+            margin: 4px 8px;
+            font-family: Consolas, 'Courier New', monospace;
             font-size: 20px;
             font-weight: bold;
             letter-spacing: 2px;
@@ -438,7 +448,7 @@
 
     <div class="game-container">
         <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle light/dark mode">☀️</button>
-        <h1>Lexi</h1>
+        <h1 onclick="resetToToday()" style="cursor:pointer">Lexi</h1>
         <div class="round-indicator" id="roundIndicator">Round 1 of 5</div>
         
         <div class="score-banner">
@@ -467,7 +477,7 @@
 
         <div class="btn-container">
             <div id="hintBtnWrapper" class="hint-btn-wrapper">
-                <button id="hintBtn" onclick="getHint()">Hint <span class="info-icon" title="Shows 3 hidden answer words with length hints. Using a hint triggers a 50% score penalty for the current round.">i</span></button>
+                <button id="hintBtn" onclick="getHint()">Hint <span class="info-icon" title="Hint 1: 3 word patterns (10% penalty). Hint 2: hide answers in definition (25% penalty). Hint 3: reveal first &amp; last letters (40% penalty).">i</span></button>
             </div>
             <button id="submitBtn" onclick="checkGuess()">Submit Guess</button>
             <button id="nextBtn" onclick="nextRound()">Next Round →</button>
@@ -555,8 +565,10 @@
         let guessNumber = 1;
         let incorrectGuesses = [];
         let topPossibleRoundScore = 0;
-        let hintCount = 0;
-        let activeHintObjects = [];
+let hintCount = 0;
+let activeHintObjects = [];
+let hintWordsHTML = "";
+let hintDefinitionHTML = "";
 
         function toggleTheme() {
             const html = document.documentElement;
@@ -663,6 +675,10 @@
             event.target.value = '';
         }
 
+        function resetToToday() {
+            window.location.href = window.location.pathname;
+        }
+
         function loadExcludedWords() {
             return fetch('excluded-words.json').then(function(resp) {
                 if (!resp.ok) return;
@@ -689,9 +705,11 @@
             document.getElementById('guessInput').value = "";
             document.getElementById('guessInput').disabled = false;
             document.getElementById('charCounter').textContent = "0";
+            document.getElementById('charCounter').style.display = "";
 
             document.getElementById('hintBtnWrapper').style.display = "flex";
             document.getElementById('hintBtn').disabled = false;
+            document.getElementById('hintBtn').innerHTML = "Hint <span class='info-icon' title=\"Hint 1: 3 word patterns (10% penalty). Hint 2: hide answers in definition (25% penalty). Hint 3: reveal first &amp; last letters (40% penalty).\">i</span>";
             document.getElementById('submitBtn').style.display = "inline-block";
             document.getElementById('submitBtn').disabled = false;
             document.getElementById('nextBtn').style.display = "none";
@@ -711,6 +729,8 @@
             incorrectGuesses = [];
             hintCount = 0;
             activeHintObjects = [];
+            hintWordsHTML = "";
+            hintDefinitionHTML = "";
 
             let longestWordLength = 0;
             for (let i = 0; i < roundData.acceptableAnswers.length; i++) {
@@ -743,60 +763,82 @@
         function getHint() {
             const roundData = GAME_ROUNDS[currentRoundIndex];
             const answers = roundData.acceptableAnswers;
+            const hintBox = document.getElementById('hintContainer');
+            const hintBtn = document.getElementById('hintBtn');
+            const penalties = [0, 10, 25, 40];
 
-            if (hintCount === 0) {
+            hintCount++;
+            const penaltyPercent = penalties[hintCount];
+
+            if (hintCount === 1) {
                 const sorted = [...answers].sort((a, b) => a.length - b.length);
                 const longest = sorted[sorted.length - 1];
-
                 let smallestCandidates = sorted.slice(0, 3).filter(w => w !== longest);
-                if (smallestCandidates.length === 0) {
-                    smallestCandidates = sorted.filter(w => w !== longest);
-                }
+                if (smallestCandidates.length === 0) smallestCandidates = sorted.filter(w => w !== longest);
                 const smallest = smallestCandidates[Math.floor(Math.random() * smallestCandidates.length)];
-
-                let inBetweenCandidates = sorted.slice(3, sorted.length - 1);
-                inBetweenCandidates = inBetweenCandidates.filter(w => w !== longest && w !== smallest);
-                if (inBetweenCandidates.length === 0) {
-                    inBetweenCandidates = sorted.filter(w => w !== longest && w !== smallest);
-                }
+                let inBetweenCandidates = sorted.slice(3, sorted.length - 1).filter(w => w !== longest && w !== smallest);
+                if (inBetweenCandidates.length === 0) inBetweenCandidates = sorted.filter(w => w !== longest && w !== smallest);
                 const inBetween = inBetweenCandidates[Math.floor(Math.random() * inBetweenCandidates.length)];
 
-                let selectedWords = [longest, smallest, inBetween];
+                const selectedWords = [longest, smallest, inBetween];
                 selectedWords.sort(() => Math.random() - 0.5);
 
                 activeHintObjects = selectedWords.map(function(word, index) {
-                    let initialLetter = word.charAt(0);
-                    let dashes = "-".repeat(word.length - 1);
-                    const sizeSuffix = " (" + word.length + ")";
-                    return {
-                        fullWord: word,
-                        displayString: initialLetter + dashes + sizeSuffix,
-                        elementId: "lexi-hint-item-" + index,
-                        revealed: false
-                    };
+                    return { fullWord: word, elementId: "lexi-hint-item-" + index };
                 });
+
+                hintWordsHTML = '<div id="hintWordsArea">';
+                activeHintObjects.forEach(function(hintObj, index) {
+                    const w = hintObj.fullWord;
+                    hintWordsHTML += "<div id='" + hintObj.elementId + "' class='hint-word-block'>" + w.charAt(0) + "-".repeat(w.length - 1) + " (" + w.length + ")</div>";
+                });
+                hintWordsHTML += '</div>';
+                hintDefinitionHTML = "";
+
+                hintBox.innerHTML = "💡 <strong>Hint (" + penaltyPercent + "% Penalty):</strong><br>" + hintWordsHTML;
+            } else if (hintCount === 2) {
+                const def = escapeHtml(roundData.clue + ": " + roundData.fullDefinition);
+                const hiddenDef = obscureInDefinition(def, answers, false);
+                hintDefinitionHTML = '<div style="margin-top:12px"><div style="text-decoration:underline;margin-bottom:6px;font-weight:700;font-size:14px">Obfuscated Definition</div><div class="hint-word-block">' + hiddenDef + '</div></div>';
+                hintBox.innerHTML = "💡 <strong>Hint (" + penaltyPercent + "% Penalty):</strong><br>" + hintWordsHTML + hintDefinitionHTML;
+            } else if (hintCount === 3) {
+                const def = escapeHtml(roundData.clue + ": " + roundData.fullDefinition);
+                const revealedDef = obscureInDefinition(def, answers, true);
+                hintDefinitionHTML = '<div style="margin-top:12px"><div style="text-decoration:underline;margin-bottom:6px;font-weight:700;font-size:14px">Obfuscated Definition</div><div class="hint-word-block">' + revealedDef + '</div></div>';
+                hintBox.innerHTML = "💡 <strong>Hint (" + penaltyPercent + "% Penalty):</strong><br>" + hintWordsHTML + hintDefinitionHTML;
+                hintBtn.disabled = true;
             }
 
-            hintCount++;
-            const revealIndex = hintCount - 1;
-            if (activeHintObjects[revealIndex]) {
-                activeHintObjects[revealIndex].revealed = true;
-            }
+            hintBtn.textContent = "Hint " + hintCount + "/3";
+            hintBtn.innerHTML = "Hint " + hintCount + "/3 <span class='info-icon' title=\"Hint 1: 3 word patterns (10% penalty). Hint 2: hide answers in definition (25% penalty). Hint 3: reveal first &amp; last letters (40% penalty).\">i</span>";
 
-            const hintBox = document.getElementById('hintContainer');
-            const penalty = hintCount * 10;
-            let hintHTML = "💡 <strong>Hint (" + penalty + "% Penalty):</strong><br>";
-            activeHintObjects.forEach(function(hintObj) {
-                if (hintObj.revealed) {
-                    hintHTML += "<div class='hint-list-item' id='" + hintObj.elementId + "'>" + hintObj.displayString + "</div>";
-                }
-            });
-            hintBox.innerHTML = hintHTML;
             hintBox.style.display = "block";
+        }
 
-            if (hintCount >= 3) {
-                document.getElementById('hintBtn').disabled = true;
+        function escapeHtml(text) {
+            var d = document.createElement('div');
+            d.appendChild(document.createTextNode(text));
+            return d.innerHTML;
+        }
+
+        function obscureInDefinition(definition, answers, showEnds) {
+            var result = definition;
+            var sorted = [...answers].sort(function(a, b) { return b.length - a.length; });
+            for (var i = 0; i < sorted.length; i++) {
+                var word = sorted[i];
+                var escaped = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                var regex = new RegExp('\\b' + escaped + '\\b', 'gi');
+                if (showEnds) {
+                    if (word.length <= 2) {
+                        result = result.replace(regex, word.toUpperCase());
+                    } else {
+                        result = result.replace(regex, word.charAt(0).toUpperCase() + '_'.repeat(word.length - 2) + word.charAt(word.length - 1).toUpperCase());
+                    }
+                } else {
+                    result = result.replace(regex, '_'.repeat(word.length));
+                }
             }
+            return result;
         }
 
         function matchAnswer(guess, answers) {
@@ -808,6 +850,38 @@
                 if (answers.includes(singular)) return singular;
             }
             return null;
+        }
+
+        function levenshtein(a, b) {
+            var m = a.length, n = b.length;
+            var dp = [];
+            for (var i = 0; i <= m; i++) {
+                dp[i] = [i];
+            }
+            for (var j = 0; j <= n; j++) {
+                dp[0][j] = j;
+            }
+            for (var i = 1; i <= m; i++) {
+                for (var j = 1; j <= n; j++) {
+                    var cost = a[i - 1] === b[j - 1] ? 0 : 1;
+                    dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost);
+                }
+            }
+            return dp[m][n];
+        }
+
+        function findCloseMatch(guess, answers) {
+            var threshold = Math.max(1, Math.round(guess.length * 0.4));
+            var best = null;
+            var bestDist = Infinity;
+            for (var i = 0; i < answers.length; i++) {
+                var dist = levenshtein(guess, answers[i]);
+                if (dist < bestDist) {
+                    bestDist = dist;
+                    best = answers[i];
+                }
+            }
+            return bestDist <= threshold ? best : null;
         }
 
         function incorrectIncludes(guess, list) {
@@ -852,14 +926,15 @@
 
                 let penaltyText = "";
                 if (hintCount > 0) {
-                    const penaltyPercent = hintCount * 10;
-                    finalRoundScore = Math.round(finalRoundScore * (1 - hintCount * 0.1));
+                    const penalties = [0, 10, 25, 40];
+                    const penaltyPercent = penalties[hintCount];
+                    finalRoundScore = Math.round(finalRoundScore * (1 - penaltyPercent / 100));
                     penaltyText = " (Hint Used: " + penaltyPercent + "% Penalty)";
                     activeHintObjects.forEach(function(hintObj) {
                         if (hintObj.fullWord === matchedWord) {
                             const targetElement = document.getElementById(hintObj.elementId);
                             if (targetElement) {
-                                targetElement.textContent = hintObj.revealedString;
+                                targetElement.textContent = matchedWord;
                                 targetElement.style.color = "#28a745";
                             }
                         }
@@ -887,7 +962,12 @@
                 });
 
                 if (attemptsLeft > 0) {
-                    messageElement.textContent = '\u274c Incorrect! Keep trying.';
+                    var closeWord = findCloseMatch(userGuess, roundData.acceptableAnswers);
+                    if (closeWord) {
+                        messageElement.innerHTML = '\u274c Not quite! <strong>' + userGuess + '</strong> is close to a correct answer. Keep trying.';
+                    } else {
+                        messageElement.textContent = '\u274c Incorrect! Keep trying.';
+                    }
                     messageElement.className = 'message incorrect';
                     attemptsElement.textContent = "Attempts remaining: " + attemptsLeft;
                     guessNumber++;
@@ -939,6 +1019,7 @@
                 document.getElementById('roundIndicator').textContent = "Game Completed!";
                 document.getElementById('clueDisplay').textContent = "Final Score: " + totalScore + " / " + totalPossible;
                 document.getElementById('guessInput').style.display = "none";
+                document.getElementById('charCounter').style.display = "none";
                 document.getElementById('nextBtn').style.display = "none";
                 document.getElementById('attemptsDisplay').style.display = "none";
                 document.getElementById('definitionContainer').style.display = "none";
@@ -946,7 +1027,7 @@
                 document.getElementById('incorrectContainer').style.display = "none";
                 document.getElementById('hintContainer').style.display = "none";
 
-                document.getElementById('messageDisplay').innerHTML = '🏆 Fantastic job! You have completed all ' + total + ' rounds of Lexi.<br>Your final score accumulated is <strong>' + totalScore + '</strong> / <strong>' + totalPossible + '</strong> points.<br><br><button id="shareBtn" onclick="shareScore()" style="padding: 10px 22px; font-size: 14px;">📤 Share Your Score</button>';
+                document.getElementById('messageDisplay').innerHTML = '🏆 Fantastic job! You have completed all ' + total + ' rounds of Lexi.<br>Your final score is <strong>' + totalScore + '</strong> / <strong>' + totalPossible + '</strong> points.<br><br><button id="shareBtn" onclick="shareScore()" style="padding: 10px 22px; font-size: 14px;">📤 Share Your Score</button>';
                 document.getElementById('messageDisplay').className = 'message correct';
             }
         }

@@ -449,23 +449,43 @@
     <div class="game-container">
         <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle light/dark mode">☀️</button>
         <h1 onclick="resetToToday()" style="cursor:pointer">Lexi</h1>
-        <div class="round-indicator" id="roundIndicator">Round 1 of 5</div>
-        
+
+        <div style="display:flex;gap:12px;margin-bottom:8px;justify-content:center">
+            <button id="howToBtn" onclick="toggleHowTo()" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:13px;padding:0">How to Play ▸</button>
+            <button id="scoringBtn" onclick="toggleScoring()" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:13px;padding:0">Scoring ▸</button>
+            <button id="aboutBtn" onclick="toggleAbout()" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:13px;padding:0">About ▸</button>
+        </div>
+        <div id="howToContent" style="display:none;text-align:center">
+        <p class="detailed-instructions">
+            Analyze the word below and guess an acceptable word that is contained within its definition. The targeted answer must be <strong>5 letters or more</strong>. Spaces and numbers are not allowed.
+        </p>
+        <p class="detailed-instructions" style="font-style:italic">
+            All definition records are sourced directly from <a href="https://www.merriam-webster.com" target="_blank">merriam-webster.com</a>.
+        </p>
+        </div>
+        <div id="scoringContent" style="display:none;text-align:center">
+        <p class="detailed-instructions">
+            Your score per round is calculated by taking the length of your answer, multiplying it by 5 and dividing by the number of the guess you got it right on &mdash; any hints you take then have their % deducted. The maximum possible score is based on guessing the longest word on the first guess, with no hints.
+        </p>
+        </div>
+        <div id="aboutContent" style="display:none;text-align:center">
+        <p class="detailed-instructions">
+            This game was created by Rob Anderson after he was reading a book and wanted to be sure on the definition of the word &ldquo;anathema&rdquo;. He thought he knew, but wasn&rsquo;t sure. When he was proven right, he was happy.. and inspired. This is his first project of this type, and it has been heavily assisted by the use of AI, making up for his lack of technical ability when it comes to coding.
+        </p>
+        </div>
+
         <div class="score-banner">
             <div class="score-tracker-item">
                 <span id="roundScoreTracker">Round Max Score: --</span>
-                <span class="info-icon" title="Max Score: (5 / attempt number) x longest answer word length. Guessing a longer word on your first attempt earns maximum points!">i</span>
             </div>
             <span id="totalScoreTracker">Total Score: 0</span>
         </div>
-        
-        <p class="detailed-instructions">
-            Analyze the definition below and guess an acceptable word that is contained within it. The targeted answer must be <strong>5 letters or more</strong>. Spaces and numbers are strictly prohibited. All definition records are sourced directly from <a href="https://www.merriam-webster.com" target="_blank">merriam-webster.com</a>.
-        </p>
 
         <input type="file" id="fileInput" accept=".json" onchange="handleFileUpload(event)" style="display:none">
 
         <div class="clue-box" id="clueDisplay">...</div>
+
+        <div class="round-indicator" id="roundIndicator">Round 1 of 5</div>
         
         <div class="input-wrapper">
             <!-- Modified: Added onkeydown listener to track the Enter key press -->
@@ -576,6 +596,54 @@ let hintDefinitionHTML = "";
             html.setAttribute('data-theme', isLight ? '' : 'light');
             localStorage.setItem('lexi-theme', isLight ? 'dark' : 'light');
             document.getElementById('themeToggle').textContent = isLight ? '☀️' : '🌙';
+        }
+
+        function toggleHowTo() {
+            var content = document.getElementById('howToContent');
+            var btn = document.getElementById('howToBtn');
+            var allContents = ['howToContent', 'scoringContent', 'aboutContent'];
+            var allBtns = ['howToBtn', 'scoringBtn', 'aboutBtn'];
+            var isOpen = content.style.display === 'block';
+            for (var i = 0; i < allContents.length; i++) {
+                document.getElementById(allContents[i]).style.display = 'none';
+                document.getElementById(allBtns[i]).textContent = document.getElementById(allBtns[i]).textContent.replace('▾', '▸');
+            }
+            if (!isOpen) {
+                content.style.display = 'block';
+                btn.textContent = 'How to Play ▾';
+            }
+        }
+
+        function toggleScoring() {
+            var content = document.getElementById('scoringContent');
+            var btn = document.getElementById('scoringBtn');
+            var allContents = ['howToContent', 'scoringContent', 'aboutContent'];
+            var allBtns = ['howToBtn', 'scoringBtn', 'aboutBtn'];
+            var isOpen = content.style.display === 'block';
+            for (var i = 0; i < allContents.length; i++) {
+                document.getElementById(allContents[i]).style.display = 'none';
+                document.getElementById(allBtns[i]).textContent = document.getElementById(allBtns[i]).textContent.replace('▾', '▸');
+            }
+            if (!isOpen) {
+                content.style.display = 'block';
+                btn.textContent = 'Scoring ▾';
+            }
+        }
+
+        function toggleAbout() {
+            var content = document.getElementById('aboutContent');
+            var btn = document.getElementById('aboutBtn');
+            var allContents = ['howToContent', 'scoringContent', 'aboutContent'];
+            var allBtns = ['howToBtn', 'scoringBtn', 'aboutBtn'];
+            var isOpen = content.style.display === 'block';
+            for (var i = 0; i < allContents.length; i++) {
+                document.getElementById(allContents[i]).style.display = 'none';
+                document.getElementById(allBtns[i]).textContent = document.getElementById(allBtns[i]).textContent.replace('▾', '▸');
+            }
+            if (!isOpen) {
+                content.style.display = 'block';
+                btn.textContent = 'About ▾';
+            }
         }
 
         (function initTheme() {
@@ -799,12 +867,12 @@ let hintDefinitionHTML = "";
             } else if (hintCount === 2) {
                 const def = escapeHtml(roundData.clue + ": " + roundData.fullDefinition);
                 const hiddenDef = obscureInDefinition(def, answers, false);
-                hintDefinitionHTML = '<div style="margin-top:12px"><div style="text-decoration:underline;margin-bottom:6px;font-weight:700;font-size:14px">Obfuscated Definition</div><div class="hint-word-block">' + hiddenDef + '</div></div>';
+                hintDefinitionHTML = '<div id="hintDefinitionArea" style="margin-top:12px"><div style="text-decoration:underline;margin-bottom:6px;font-weight:700;font-size:14px">Obfuscated Definition</div><div class="hint-word-block">' + hiddenDef + '</div></div>';
                 hintBox.innerHTML = "💡 <strong>Hint (" + penaltyPercent + "% Penalty):</strong><br>" + hintWordsHTML + hintDefinitionHTML;
             } else if (hintCount === 3) {
                 const def = escapeHtml(roundData.clue + ": " + roundData.fullDefinition);
                 const revealedDef = obscureInDefinition(def, answers, true);
-                hintDefinitionHTML = '<div style="margin-top:12px"><div style="text-decoration:underline;margin-bottom:6px;font-weight:700;font-size:14px">Obfuscated Definition</div><div class="hint-word-block">' + revealedDef + '</div></div>';
+                hintDefinitionHTML = '<div id="hintDefinitionArea" style="margin-top:12px"><div style="text-decoration:underline;margin-bottom:6px;font-weight:700;font-size:14px">Obfuscated Definition</div><div class="hint-word-block">' + revealedDef + '</div></div>';
                 hintBox.innerHTML = "💡 <strong>Hint (" + penaltyPercent + "% Penalty):</strong><br>" + hintWordsHTML + hintDefinitionHTML;
                 hintBtn.disabled = true;
             }
@@ -939,6 +1007,21 @@ let hintDefinitionHTML = "";
                             }
                         }
                     });
+                    var hintDefArea = document.getElementById('hintDefinitionArea');
+                    if (hintDefArea) {
+                        var patterns = [];
+                        if (hintCount >= 3) {
+                            patterns.push(matchedWord.charAt(0).toUpperCase() + '_'.repeat(matchedWord.length - 2) + matchedWord.charAt(matchedWord.length - 1).toUpperCase());
+                        }
+                        if (hintCount >= 2) {
+                            patterns.push('_'.repeat(matchedWord.length));
+                        }
+                        for (var pi = 0; pi < patterns.length; pi++) {
+                            var esc = patterns[pi].replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                            var re = new RegExp(esc, 'g');
+                            hintDefArea.innerHTML = hintDefArea.innerHTML.replace(re, '<span style="color:#28a745;font-weight:bold">' + matchedWord + '</span>');
+                        }
+                    }
                 }
 
                 totalScore += finalRoundScore;
